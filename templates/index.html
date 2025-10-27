@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Prediksi Diabetes</title>
+</head>
+<body>
+  <h1>Prediksi Diabetes</h1>
+  <form action="/predict" method="post">
+    <label>Model:</label>
+    <select name="model">
+      {% for name in model_names %}
+      <option value="{{ name }}">{{ name }}</option>
+      {% endfor %}
+    </select><br><br>
+
+    <label>Pregnancies:</label><input type="number" name="pregnancies"><br>
+    <label>Glucose:</label><input type="number" name="glucose"><br>
+    <label>Blood Pressure:</label><input type="number" name="blood_pressure"><br>
+    <label>Skin Thickness:</label><input type="number" name="skin_thickness"><br>
+    <label>Insulin:</label><input type="number" name="insulin"><br>
+    <label>BMI:</label><input type="text" name="bmi"><br>
+    <label>Diabetes Pedigree Function:</label><input type="text" name="diabetes_pedigree"><br>
+    <label>Age:</label><input type="number" name="age"><br><br>
+
+    <input type="submit" value="Predict">
+  </form>
+
+  {% if prediction %}
+    <h2>Hasil Prediksi: {{ prediction }}</h2>
+  {% endif %}
+</body>
+</html>

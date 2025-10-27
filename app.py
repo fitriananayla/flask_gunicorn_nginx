@@ -1,15 +1,22 @@
 from flask import Flask, render_template, request
 import pickle
 import pandas as pd
+from dash import Dash, html, dcc
+import plotly.express as px
 
 app = Flask(__name__)
 
-with open('model.pkl', 'rb') as f:
-    model = pickle.load(f)
-with open('scaler.pkl', 'rb') as f:
-    scaler = pickle.load(f)
-
-model_names = ['Decision Tree', 'SVC']
+# --- LOAD MODEL ---
+try:
+    with open('model.pkl', 'rb') as file:
+        model = pickle.load(file)
+    with open('scaler.pkl', 'rb') as file:
+        scaler = pickle.load(file)
+    model_names = ['Decision Tree', 'SVC']
+except:
+    model = None
+    scaler = None
+    model_names = ['Model Belum Tersedia']
 
 @app.route('/')
 def index():
@@ -17,6 +24,9 @@ def index():
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    if model is None:
+        return render_template("index.html", prediction="Model belum di-load.")
+    
     selected_model = request.form['model']
     data = {
         'Pregnancies': int(request.form['pregnancies']),
@@ -29,16 +39,26 @@ def predict():
         'Age': int(request.form['age'])
     }
 
-    df = pd.DataFrame(data, index=[0])
-    df_scaled = scaler.transform(df)
+    input_data = pd.DataFrame(data, index=[0])
+    input_data_scaled = scaler.transform(input_data)
 
     selected_model_idx = model_names.index(selected_model)
     selected_model_obj = model[selected_model_idx]
+    prediction = selected_model_obj.predict(input_data_scaled)
+    prediction = 'Diabetic' if prediction == 1 else 'Non-Diabetic'
 
-    prediction = selected_model_obj.predict(df_scaled)
-    result = 'Diabetic' if prediction == 1 else 'Non-Diabetic'
+    return render_template('index.html', model_names=model_names, prediction=prediction)
 
-    return render_template('index.html', model_names=model_names, prediction=result)
+# --- DASHBOARD DENGAN DASH ---
+dash_app = Dash(__name__, server=app, url_base_pathname='/dash/')
+
+df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv')
+fig = px.bar(df, x='continent', y='lifeExp', color='continent', barmode='group')
+
+dash_app.layout = html.Div([
+    html.H1("Visualisasi Data Global", style={'textAlign': 'center'}),
+    dcc.Graph(figure=fig)
+])
 
 if __name__ == '__main__':
     app.run(debug=True)

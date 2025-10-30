@@ -4,9 +4,10 @@ import pandas as pd
 from dash import Dash, html, dcc
 import plotly.express as px
 
+# --- INISIALISASI FLASK ---
 app = Flask(__name__)
 
-# --- LOAD MODEL ---
+# --- LOAD MODEL MACHINE LEARNING ---
 try:
     with open('model.pkl', 'rb') as file:
         model = pickle.load(file)
@@ -18,10 +19,12 @@ except:
     scaler = None
     model_names = ['Model Belum Tersedia']
 
+# --- HALAMAN UTAMA FLASK ---
 @app.route('/')
 def index():
     return render_template('index.html', model_names=model_names)
 
+# --- HALAMAN PREDIKSI ---
 @app.route('/predict', methods=['POST'])
 def predict():
     if model is None:
@@ -49,16 +52,31 @@ def predict():
 
     return render_template('index.html', model_names=model_names, prediction=prediction)
 
+
 # --- DASHBOARD DENGAN DASH ---
 dash_app = Dash(__name__, server=app, url_base_pathname='/dash/')
 
+# Menggunakan dataset dari Plotly (sesuai file PDF)
 df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv')
-fig = px.bar(df, x='continent', y='lifeExp', color='continent', barmode='group')
+fig = px.bar(
+    df,
+    x='continent',
+    y='lifeExp',
+    color='continent',
+    barmode='group',
+    title='Visualisasi Data Global'
+)
 
+# Layout dashboard
 dash_app.layout = html.Div([
-    html.H1("Visualisasi Data Global", style={'textAlign': 'center'}),
+    html.H1("Visualisasi Data Global", style={
+        'textAlign': 'center',
+        'color': '#222',
+        'marginBottom': 30
+    }),
     dcc.Graph(figure=fig)
 ])
 
+# --- JALANKAN FLASK ---
 if __name__ == '__main__':
     app.run(debug=True)

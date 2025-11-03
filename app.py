@@ -4,14 +4,10 @@ import pandas as pd
 from dash import Dash, html, dcc, dash_table
 import plotly.express as px
 
-# ===============================
-# 🔹 INISIALISASI FLASK
-# ===============================
+# --- INISIALISASI FLASK ---
 app = Flask(__name__)
 
-# ===============================
-# 🔹 LOAD MODEL MACHINE LEARNING
-# ===============================
+# --- LOAD MODEL MACHINE LEARNING ---
 try:
     with open('model.pkl', 'rb') as file:
         model = pickle.load(file)
@@ -23,16 +19,14 @@ except:
     scaler = None
     model_names = ['Model Belum Tersedia']
 
-# ===============================
-# 🔹 HALAMAN UTAMA FLASK
-# ===============================
+
+# --- HALAMAN UTAMA FLASK ---
 @app.route('/')
 def index():
     return render_template('index.html', model_names=model_names)
 
-# ===============================
-# 🔹 HALAMAN PREDIKSI
-# ===============================
+
+# --- HALAMAN PREDIKSI ---
 @app.route('/predict', methods=['POST'])
 def predict():
     if model is None:
@@ -60,24 +54,26 @@ def predict():
 
     return render_template('index.html', model_names=model_names, prediction=prediction)
 
-# ===============================
-# 🔹 DASHBOARD DENGAN DASH
-# ===============================
+
+# ====================================================
+# === DASHBOARD DENGAN DASH (DATA BUAH)
+# ====================================================
+
 dash_app = Dash(__name__, server=app, url_base_pathname='/dash/')
 
-# Dataset Buah (dari contoh di PDF)
+# Dataset Buah
 df = pd.DataFrame({
     'Fruit': ['Apples', 'Oranges', 'Bananas', 'Apples', 'Oranges', 'Bananas'],
     'Amount': [4, 1, 2, 2, 4, 5],
     'City': ['SF', 'SF', 'SF', 'Montreal', 'Montreal', 'Montreal']
 })
 
-# Ubah kolom Fruit jadi kategori agar urut rapi
-df['Fruit'] = pd.Categorical(df['Fruit'], categories=['Apples', 'Oranges', 'Bananas'], ordered=True)
+# --- AGREGASI DATA ---
+df_sum = df.groupby(['Fruit', 'City'], as_index=False)['Amount'].sum()
 
-# Buat grafik batang
+# --- GRAFIK BAR ---
 fig = px.bar(
-    df,
+    df_sum,
     x='Fruit',
     y='Amount',
     color='City',
@@ -85,7 +81,6 @@ fig = px.bar(
     title='Jumlah Buah Berdasarkan Kota'
 )
 
-# Styling grafik agar tampil rapi
 fig.update_layout(
     xaxis_title="Jenis Buah",
     yaxis_title="Jumlah",
@@ -95,13 +90,14 @@ fig.update_layout(
     font=dict(size=14)
 )
 
-# Layout dashboard
+# --- LAYOUT DASHBOARD ---
 dash_app.layout = html.Div([
     html.H1("Dashboard Data Buah", style={
         'textAlign': 'center',
         'color': '#222',
         'marginBottom': 30
     }),
+
     html.H3("Tabel Data Buah:", style={'marginLeft': 30}),
     dash_table.DataTable(
         data=df.to_dict('records'),
@@ -111,8 +107,10 @@ dash_app.layout = html.Div([
         style_cell={'textAlign': 'center', 'fontFamily': 'Arial', 'fontSize': 14},
         style_header={'backgroundColor': '#EAEAEA', 'fontWeight': 'bold'}
     ),
+
     html.H3("Grafik Jumlah Buah per Kota:", style={'marginLeft': 30, 'marginTop': 40}),
     dcc.Graph(figure=fig),
+
     html.Div([
         html.A("⬅️ Kembali ke Halaman Utama", href='/', style={
             'display': 'block',
@@ -125,8 +123,9 @@ dash_app.layout = html.Div([
     ])
 ])
 
-# ===============================
-# 🔹 JALANKAN FLASK
-# ===============================
+
+# ====================================================
+# === JALANKAN APLIKASI FLASK
+# ====================================================
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 import pickle
 import pandas as pd
-from dash import Dash, html, dcc
+from dash import Dash, html, dcc, dash_table
 import plotly.express as px
 
 # --- INISIALISASI FLASK ---
@@ -56,26 +56,41 @@ def predict():
 # --- DASHBOARD DENGAN DASH ---
 dash_app = Dash(__name__, server=app, url_base_pathname='/dash/')
 
-# Menggunakan dataset dari Plotly (sesuai file PDF)
-df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv')
+# Dataset dari file PDF
+df = pd.DataFrame({
+    'Fruit': ['Apples', 'Oranges', 'Bananas', 'Apples', 'Oranges', 'Bananas'],
+    'Amount': [4, 1, 2, 2, 4, 5],
+    'City': ['SF', 'SF', 'SF', 'Montreal', 'Montreal', 'Montreal']
+})
+
+# Buat grafik
 fig = px.bar(
     df,
-    x='continent',
-    y='lifeExp',
-    color='continent',
+    x='Fruit',
+    y='Amount',
+    color='City',
     barmode='group',
-    title='Visualisasi Data Global'
+    title='Jumlah Buah Berdasarkan Kota'
 )
 
 # Layout dashboard
 dash_app.layout = html.Div([
-    html.H1("Visualisasi Data Global", style={
+    html.H1("Dashboard Data Buah", style={
         'textAlign': 'center',
-        'color': '#222',
+        'color': '#333',
         'marginBottom': 30
     }),
+    html.H3("Tabel Data Buah:", style={'marginTop': 20}),
+    dash_table.DataTable(
+        data=df.to_dict('records'),
+        page_size=6,
+        style_table={'overflowX': 'auto'},
+        style_cell={'textAlign': 'center'}
+    ),
+    html.H3("Grafik Jumlah Buah per Kota:", style={'marginTop': 30}),
     dcc.Graph(figure=fig)
 ])
+
 
 # --- JALANKAN FLASK ---
 if __name__ == '__main__':
